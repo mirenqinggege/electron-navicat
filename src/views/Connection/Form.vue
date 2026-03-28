@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { connectionsDB } from '../../services/db'
 import { generateId } from '../../services/crypto'
+import { ipcService } from '../../services/ipc'
 import { useConnectionStore } from '../../stores/connections'
 import type { ConnectionConfig } from '../../types'
 
@@ -71,7 +72,7 @@ async function loadConnection() {
 async function handleTest() {
   testing.value = true
   try {
-    const result: { success: boolean; error?: string } = { success: true }
+    const result = await ipcService.testConnection(formState.value)
     if (result.success) {
       message.success('连接测试成功')
     } else {
