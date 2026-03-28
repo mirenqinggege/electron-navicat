@@ -48,9 +48,10 @@ export class MySQLPlugin implements DatabasePlugin {
       connection = await this.createConnection(config);
       await connection.ping();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[MySQLPlugin] 连接测试失败:', error);
-      return false;
+      // 抛出错误，让上层捕获错误信息
+      throw new Error(error.message || '连接失败');
     } finally {
       if (connection) {
         await connection.end();
