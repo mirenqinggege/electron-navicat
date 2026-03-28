@@ -18,7 +18,7 @@ import { ConfigProvider } from 'ant-design-vue'
 
 <style scoped>
 .app-layout {
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .app-header {

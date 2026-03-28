@@ -317,12 +317,13 @@ export default defineComponent({
 
 <style scoped>
 .workspace {
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
 }
 
 .workspace-layout {
   height: 100%;
+  overflow: hidden;
 }
 
 .workspace-header {
@@ -348,7 +349,8 @@ export default defineComponent({
 }
 
 .workspace-body {
-  height: calc(100vh - 48px);
+  flex: 1;
+  overflow: hidden;
 }
 
 .workspace-sider {
@@ -359,6 +361,7 @@ export default defineComponent({
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
 .sider-section {
