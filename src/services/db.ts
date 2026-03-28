@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import type { ConnectionConfig } from '../types'
 
-const DB_NAME = 'electron-native-db'
+const DB_NAME = 'electron-navicat-db'
 const DB_VERSION = 1
 const CONNECTIONS_STORE = 'connections'
 

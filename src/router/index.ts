@@ -36,7 +36,7 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const title = to.meta.title as string
   if (title) {
-    document.title = `${title} - Electron Native`
+    document.title = `${title} - Electron Navicat`
   }
   next()
 })

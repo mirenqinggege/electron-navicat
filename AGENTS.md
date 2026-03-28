@@ -14,7 +14,7 @@
 ## 目录结构
 
 ```
-electron-native/
+electron-navicat/
 ├── electron/           # Electron 主进程代码
 │   ├── main.ts        # 主进程入口
 │   ├── preload.ts     # 预加载脚本 (contextBridge)

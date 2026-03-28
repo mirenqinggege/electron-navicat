@@ -7,7 +7,7 @@ import { ConfigProvider } from 'ant-design-vue'
   <ConfigProvider :locale="zhCN">
     <a-layout class="app-layout">
       <a-layout-header class="app-header">
-        <div class="logo">Electron Native</div>
+        <div class="logo">Electron Navicat</div>
       </a-layout-header>
       <a-layout-content class="app-content">
         <router-view />

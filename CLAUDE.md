@@ -25,7 +25,7 @@ pnpm preview
 ## 项目架构
 
 ```
-electron-native/
+electron-navicat/
 ├── electron/              # Electron 主进程
 │   ├── main.ts           # 主进程入口，创建 BrowserWindow
 │   └── preload.ts        # 预加载脚本，通过 contextBridge 暴露 IPC API
