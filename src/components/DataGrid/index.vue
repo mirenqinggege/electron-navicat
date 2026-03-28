@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { Table } from 'ant-design-vue'
 import type { TableColumnType, TableProps } from 'ant-design-vue'
+import { Table } from 'ant-design-vue'
+import { computed, ref, watch } from 'vue'
 import type { QueryResult } from '../../types'
 
 interface Props {
@@ -18,19 +18,19 @@ const props = withDefaults(defineProps<Props>(), {
   editable: false
 })
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'cell-change', row: number, column: string, value: unknown): void
   (e: 'row-add'): void
   (e: 'row-delete', row: number): void
 }>()
 
 const currentPage = ref(1)
-const selectedRowKeys = ref<number[]>([])
+const selectedRowKeys = ref<(string | number)[]>([])
 
 // 转换为表格列
 const columns = computed<TableColumnType[]>(() => {
   if (!props.data?.fields) return []
-  
+
   return props.data.fields.map((field, index) => ({
     title: field.name,
     dataIndex: index,
@@ -40,8 +40,11 @@ const columns = computed<TableColumnType[]>(() => {
     sorter: (a: Record<string, unknown>, b: Record<string, unknown>) => {
       const aVal = a[field.name]
       const bVal = b[field.name]
+      if (aVal == null && bVal == null) return 0
+      if (aVal == null) return -1
+      if (bVal == null) return 1
       if (aVal === bVal) return 0
-      return aVal > bVal ? 1 : -1
+      return String(aVal) > String(bVal) ? 1 : -1
     }
   }))
 })
@@ -49,7 +52,7 @@ const columns = computed<TableColumnType[]>(() => {
 // 转换为表格数据
 const dataSource = computed(() => {
   if (!props.data?.rows) return []
-  
+
   return props.data.rows.map((row, index) => {
     const record: Record<string, unknown> = { __rowIndex: index }
     props.data?.fields?.forEach((field, fieldIndex) => {
@@ -62,12 +65,12 @@ const dataSource = computed(() => {
 })
 
 // 表格行选择
-const rowSelection: TableProps['rowSelection'] = {
-  selectedRowKeys: selectedRowKeys,
-  onChange: (keys: number[]) => {
+const rowSelection = computed<TableProps['rowSelection']>(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: any[]) => {
     selectedRowKeys.value = keys
   }
-}
+}))
 
 // 分页配置
 const pagination = computed(() => ({
@@ -121,25 +124,14 @@ defineExpose({
         共 {{ data.rows?.length || 0 }} 行
       </span>
     </div>
-    
-    <Table
-      :columns="columns"
-      :data-source="dataSource"
-      :loading="loading"
-      :pagination="pagination"
+
+    <Table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="pagination"
       :row-selection="editable ? rowSelection : undefined"
       :row-key="(record: Record<string, unknown>) => record.__rowIndex as number"
-      :scroll="{ x: 'max-content', y: 'calc(100vh - 300px)' }"
-      size="small"
-      bordered
-      @change="handleTableChange"
-    >
+      :scroll="{ x: 'max-content', y: 'calc(100vh - 300px)' }" size="small" bordered @change="handleTableChange">
       <template #bodyCell="{ column, record }">
         <template v-if="editable">
-          <div
-            class="editable-cell"
-            @click="handleCellClick(record, column)"
-          >
+          <div class="editable-cell" @click="handleCellClick(record, column)">
             {{ record[column.dataIndex as string] }}
           </div>
         </template>
@@ -149,7 +141,7 @@ defineExpose({
           </span>
         </template>
       </template>
-      
+
       <template #emptyText>
         <a-empty description="暂无数据" />
       </template>

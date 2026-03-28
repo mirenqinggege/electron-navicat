@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { DatabaseInfo, TableInfo, ColumnInfo, QueryResult } from '../types'
+import type { TableInfo, ColumnInfo, QueryResult } from '../types'
 
 export interface SqlHistoryItem {
   id: string
@@ -23,9 +23,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   // 当前连接信息
   const connId = ref<string>('')
   const currentDatabase = ref<string>('')
-  
+
   // 数据库结构
-  const databases = ref<DatabaseInfo[]>([])
+  const databases = ref<string[]>([])
   const tables = ref<Map<string, TableInfo[]>>(new Map())
   const columns = ref<Map<string, ColumnInfo[]>>(new Map())
   
@@ -60,8 +60,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     currentDatabase.value = db
   }
   
-  function setDatabases(list: DatabaseInfo[]) {
-    databases.value = list
+  function setDatabases(list: { name: string }[]) {
+    databases.value = list.map(d => d.name)
   }
   
   function setTables(database: string, list: TableInfo[]) {

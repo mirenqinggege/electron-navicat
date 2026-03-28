@@ -22,11 +22,16 @@ const executing = ref(false)
 
 async function connect() {
   if (!connId.value) return
-  
+
   try {
-    const result = await ipcService.dbConnect(connId.value)
-    if (result.success) {
-      workspaceStore.setConnId(connId.value)
+    const conn = connectionStore.getConnection(connId.value)
+    if (!conn) {
+      message.error('连接配置不存在')
+      return
+    }
+    const result = await ipcService.connect(conn)
+    if (result.success && result.connId) {
+      workspaceStore.setConnId(result.connId)
       connectionStore.setConnectionStatus(connId.value, {
         id: connId.value,
         connected: true
@@ -43,9 +48,9 @@ async function connect() {
 
 async function disconnect() {
   if (!connId.value) return
-  
+
   try {
-    await ipcService.dbDisconnect(connId.value)
+    await ipcService.disconnect(workspaceStore.connId || connId.value)
     connectionStore.setConnectionStatus(connId.value, {
       id: connId.value,
       connected: false
@@ -64,31 +69,35 @@ async function executeSql() {
     message.warning('请输入 SQL 语句')
     return
   }
-  
+
   executing.value = true
   workspaceStore.updateTabLoading(activeTab.id, true)
-  
+
   const startTime = Date.now()
-  
+
   try {
-    const result = await ipcService.dbQuery(connId.value, activeTab.sql)
+    const response = await ipcService.query(workspaceStore.connId || '', activeTab.sql)
     const duration = Date.now() - startTime
-    
-    workspaceStore.updateTabResult(activeTab.id, result)
-    
-    const historyItem: SqlHistoryItem = {
-      id: `history-${Date.now()}`,
-      sql: activeTab.sql,
-      timestamp: Date.now(),
-      duration
+
+    if (response.success && response.data) {
+      workspaceStore.updateTabResult(activeTab.id, response.data)
+
+      const historyItem: SqlHistoryItem = {
+        id: `history-${Date.now()}`,
+        sql: activeTab.sql,
+        timestamp: Date.now(),
+        duration
+      }
+      workspaceStore.addSqlHistory(historyItem)
+
+      message.success(`执行成功，耗时 ${duration}ms`)
+    } else {
+      throw new Error(response.error || '执行失败')
     }
-    workspaceStore.addSqlHistory(historyItem)
-    
-    message.success(`执行成功，耗时 ${duration}ms`)
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : '执行失败'
     workspaceStore.updateTabError(activeTab.id, errorMsg)
-    
+
     const historyItem: SqlHistoryItem = {
       id: `history-${Date.now()}`,
       sql: activeTab.sql,
@@ -96,7 +105,7 @@ async function executeSql() {
       error: errorMsg
     }
     workspaceStore.addSqlHistory(historyItem)
-    
+
     message.error(`执行失败: ${errorMsg}`)
   } finally {
     executing.value = false

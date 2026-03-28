@@ -4,8 +4,6 @@ import { message } from 'ant-design-vue'
 import type { TreeProps } from 'ant-design-vue'
 import { ipcService } from '../../services/ipc'
 import { useWorkspaceStore } from '../../stores/workspace'
-import type { DatabaseInfo, TableInfo, ColumnInfo } from '../../types'
-
 const store = useWorkspaceStore()
 
 const searchValue = ref('')
@@ -17,10 +15,10 @@ const loading = ref(false)
 // 将数据库结构转换为树形数据
 function buildTreeData(): TreeProps['treeData'] {
   return store.databases.map(db => ({
-    key: `db-${db.name}`,
-    title: db.name,
+    key: `db-${db}`,
+    title: db,
     icon: 'database',
-    children: buildTableChildren(db.name)
+    children: buildTableChildren(db)
   }))
 }
 
@@ -48,14 +46,18 @@ function buildColumnChildren(dbName: string, tableName: string): TreeProps['tree
 // 加载数据库列表
 async function loadDatabases() {
   if (!store.connId) return
-  
+
   loading.value = true
   store.setLoadingDatabases(true)
-  
+
   try {
-    const dbs = await ipcService.getDatabases(store.connId)
-    store.setDatabases(dbs)
-    treeData.value = buildTreeData()
+    const response = await ipcService.getDatabases(store.connId)
+    if (response.success && response.data) {
+      store.setDatabases(response.data.map(name => ({ name })))
+      treeData.value = buildTreeData()
+    } else {
+      throw new Error(response.error || '加载失败')
+    }
   } catch (error) {
     message.error('加载数据库列表失败')
     console.error(error)
@@ -68,13 +70,17 @@ async function loadDatabases() {
 // 加载表列表
 async function loadTables(dbName: string) {
   if (!store.connId) return
-  
+
   store.setLoadingTables(dbName, true)
-  
+
   try {
-    const tables = await ipcService.getTables(store.connId, dbName)
-    store.setTables(dbName, tables)
-    treeData.value = buildTreeData()
+    const response = await ipcService.getTables(store.connId, dbName)
+    if (response.success && response.data) {
+      store.setTables(dbName, response.data)
+      treeData.value = buildTreeData()
+    } else {
+      throw new Error(response.error || '加载失败')
+    }
   } catch (error) {
     message.error(`加载 ${dbName} 的表列表失败`)
     console.error(error)
@@ -86,14 +92,18 @@ async function loadTables(dbName: string) {
 // 加载字段列表
 async function loadColumns(dbName: string, tableName: string) {
   if (!store.connId) return
-  
+
   const tableKey = `${dbName}.${tableName}`
   store.setLoadingColumns(tableKey, true)
-  
+
   try {
-    const columns = await ipcService.getColumns(store.connId, dbName, tableName)
-    store.setColumns(tableKey, columns)
-    treeData.value = buildTreeData()
+    const response = await ipcService.getColumns(store.connId, dbName, tableName)
+    if (response.success && response.data) {
+      store.setColumns(tableKey, response.data)
+      treeData.value = buildTreeData()
+    } else {
+      throw new Error(response.error || '加载失败')
+    }
   } catch (error) {
     message.error(`加载 ${tableName} 的字段列表失败`)
     console.error(error)
@@ -133,7 +143,7 @@ function handleSelect(keys: string[]) {
     const dbName = key.replace('db-', '')
     store.setCurrentDatabase(dbName)
   } else if (key.startsWith('table-')) {
-    const [, dbName, tableName] = key.split('-')
+    const [, dbName] = key.split('-')
     store.setCurrentDatabase(dbName)
     // 可以在这里触发表数据加载
   }
