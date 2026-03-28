@@ -87,7 +87,7 @@ export class MySQLPlugin implements DatabasePlugin {
         TABLE_NAME as name,
         TABLE_TYPE as type,
         TABLE_COMMENT as comment,
-        TABLE_ROWS as rows,
+        TABLE_ROWS as \`rows\`,
         CREATE_TIME as createdAt,
         UPDATE_TIME as updatedAt
       FROM information_schema.TABLES

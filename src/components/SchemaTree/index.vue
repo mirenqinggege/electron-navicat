@@ -14,33 +14,55 @@ const loading = ref(false)
 
 // 将数据库结构转换为树形数据
 function buildTreeData(): TreeProps['treeData'] {
-  return store.databases.map(db => ({
-    key: `db-${db}`,
-    title: db,
-    icon: 'database',
-    children: buildTableChildren(db)
-  }))
+  return store.databases.map(db => {
+    const tables = store.tables.get(db)
+    // 如果表还没加载，添加一个占位符来显示展开箭头
+    const children = tables ? buildTableChildren(db) : [{ key: `db-${db}-placeholder`, title: '点击展开加载...', isLeaf: true }]
+    
+    return {
+      key: `db-${db}`,
+      title: db,
+      icon: 'database',
+      children
+    }
+  })
 }
 
 function buildTableChildren(dbName: string): TreeProps['treeData'] {
   const tables = store.tables.get(dbName) || []
-  return tables.map(table => ({
-    key: `table-${dbName}-${table.name}`,
-    title: table.name,
-    icon: 'table',
-    children: buildColumnChildren(dbName, table.name)
-  }))
+  if (tables.length === 0) return []
+  
+  return tables.map(table => {
+    const tableKey = `${dbName}.${table.name}`
+    const columns = store.columns.get(tableKey)
+    // 如果字段还没加载，添加一个占位符来显示展开箭头
+    const children = columns ? buildColumnChildren(dbName, table.name) : [{ key: `table-${dbName}-${table.name}-placeholder`, title: '点击展开加载...', isLeaf: true }]
+    
+    return {
+      key: `table-${dbName}-${table.name}`,
+      title: table.name,
+      icon: 'table',
+      children
+    }
+  })
 }
 
 function buildColumnChildren(dbName: string, tableName: string): TreeProps['treeData'] {
   const tableKey = `${dbName}.${tableName}`
   const columns = store.columns.get(tableKey) || []
-  return columns.map(col => ({
-    key: `col-${dbName}-${tableName}-${col.name}`,
-    title: `${col.name} (${col.type})`,
-    icon: col.key === 'PRI' ? 'key' : col.nullable ? 'column' : 'column-height',
-    isLeaf: true
-  }))
+  return columns.map(col => {
+    // 兼容两种数据格式：
+    // - 后端返回: { isPrimaryKey: boolean }
+    // - 前端期望: { key: 'PRI' | '' }
+    const isPrimaryKey = (col as any).isPrimaryKey === true || col.key === 'PRI'
+    
+    return {
+      key: `col-${dbName}-${tableName}-${col.name}`,
+      title: `${col.name} (${col.type})`,
+      icon: isPrimaryKey ? 'key' : col.nullable ? 'column' : 'column-height',
+      isLeaf: true
+    }
+  })
 }
 
 // 加载数据库列表
@@ -71,19 +93,22 @@ async function loadDatabases() {
 async function loadTables(dbName: string) {
   if (!store.connId) return
 
+  console.log('[SchemaTree] loadTables called, connId:', store.connId, 'dbName:', dbName)
   store.setLoadingTables(dbName, true)
 
   try {
     const response = await ipcService.getTables(store.connId, dbName)
+    console.log('[SchemaTree] getTables response:', response)
     if (response.success && response.data) {
       store.setTables(dbName, response.data)
       treeData.value = buildTreeData()
+      console.log('[SchemaTree] Tables set in store, treeData rebuilt')
     } else {
       throw new Error(response.error || '加载失败')
     }
   } catch (error) {
     message.error(`加载 ${dbName} 的表列表失败`)
-    console.error(error)
+    console.error('[SchemaTree] loadTables error:', error)
   } finally {
     store.setLoadingTables(dbName, false)
   }
@@ -114,19 +139,27 @@ async function loadColumns(dbName: string, tableName: string) {
 
 // 树节点展开时加载数据
 async function handleExpand(keys: string[]) {
+  console.log('[SchemaTree] handleExpand called, keys:', keys)
   expandedKeys.value = keys
   
   for (const key of keys) {
+    console.log('[SchemaTree] Processing key:', key)
     if (key.startsWith('db-')) {
       const dbName = key.replace('db-', '')
+      console.log('[SchemaTree] Loading tables for db:', dbName, 'already loaded:', store.tables.has(dbName))
       if (!store.tables.has(dbName)) {
         await loadTables(dbName)
+        console.log('[SchemaTree] Tables loaded for', dbName, 'count:', store.tables.get(dbName)?.length)
       }
     } else if (key.startsWith('table-')) {
-      const [, dbName, tableName] = key.split('-')
+      const parts = key.split('-')
+      const dbName = parts[1]
+      const tableName = parts[2]
       const tableKey = `${dbName}.${tableName}`
+      console.log('[SchemaTree] Loading columns for table:', tableKey, 'already loaded:', store.columns.has(tableKey))
       if (!store.columns.has(tableKey)) {
         await loadColumns(dbName, tableName)
+        console.log('[SchemaTree] Columns loaded for', tableKey, 'count:', store.columns.get(tableKey)?.length)
       }
     }
   }
@@ -258,5 +291,23 @@ export default defineComponent({
 
 .tree-title {
   white-space: nowrap;
+}
+
+/* 减少树节点缩进 */
+.schema-tree :deep(.ant-tree) {
+  background: transparent;
+}
+
+.schema-tree :deep(.ant-tree-node-content-wrapper) {
+  padding-left: 4px;
+}
+
+.schema-tree :deep(.ant-tree-switcher) {
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.schema-tree :deep(.ant-tree-indent-unit) {
+  width: 16px;
 }
 </style>
