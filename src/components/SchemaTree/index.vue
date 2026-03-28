@@ -193,16 +193,19 @@ onMounted(() => {
         :tree-data="treeData"
         :expanded-keys="expandedKeys"
         :selected-keys="selectedKeys"
-        :show-icon="true"
+        :show-icon="false"
         :filter-tree-node="filterTree"
         @expand="handleExpand"
         @select="handleSelect"
       >
-        <template #icon="{ icon }">
-          <database-outlined v-if="icon === 'database'" />
-          <table-outlined v-else-if="icon === 'table'" />
-          <key-outlined v-else-if="icon === 'key'" />
-          <field-string-outlined v-else />
+        <template #title="{ title, icon }">
+          <span class="tree-node">
+            <database-outlined v-if="icon === 'database'" class="tree-icon" />
+            <table-outlined v-else-if="icon === 'table'" class="tree-icon" />
+            <key-outlined v-else-if="icon === 'key'" class="tree-icon" />
+            <field-string-outlined v-else class="tree-icon" />
+            <span>{{ title }}</span>
+          </span>
         </template>
       </a-tree>
       
@@ -241,5 +244,19 @@ export default defineComponent({
 
 .schema-tree-header {
   margin-bottom: 8px;
+}
+
+.tree-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tree-icon {
+  color: #1890ff;
+}
+
+.tree-title {
+  white-space: nowrap;
 }
 </style>
