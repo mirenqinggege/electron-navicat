@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, toRaw } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { connectionsDB } from '../../services/db'
@@ -72,7 +72,9 @@ async function loadConnection() {
 async function handleTest() {
   testing.value = true
   try {
-    const result = await ipcService.testConnection(formState.value)
+    // 使用 toRaw 获取原始对象，避免 Vue 响应式代理导致序列化问题
+    const config = toRaw(formState.value)
+    const result = await ipcService.testConnection(config)
     if (result.success) {
       message.success('连接测试成功')
     } else {
@@ -96,11 +98,12 @@ async function handleSave() {
   loading.value = true
   try {
     const now = Date.now()
+    const rawState = toRaw(formState.value)
     const config: ConnectionConfig = {
-      ...formState.value,
+      ...rawState,
       id: isEdit.value ? connId.value : generateId(),
       updatedAt: now,
-      createdAt: isEdit.value ? formState.value.createdAt : now
+      createdAt: isEdit.value ? rawState.createdAt : now
     }
 
     if (isEdit.value) {
