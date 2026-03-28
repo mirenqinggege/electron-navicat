@@ -162,13 +162,15 @@ watch(() => store.databases, () => {
 }, { deep: true })
 
 // 监听 connId 变化
-watch(() => store.connId, (newId) => {
-  if (newId) {
+watch(() => store.connId, (newId, oldId) => {
+  console.log('[SchemaTree] connId 变化:', { oldId, newId })
+  if (newId && newId !== oldId) {
     loadDatabases()
   }
 })
 
 onMounted(() => {
+  console.log('[SchemaTree] onMounted, connId =', store.connId)
   if (store.connId) {
     loadDatabases()
   }

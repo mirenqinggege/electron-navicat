@@ -147,8 +147,8 @@ function handleHistoryClick(item: SqlHistoryItem) {
   }
 }
 
-function handleBack() {
-  disconnect()
+async function handleBack() {
+  await disconnect()
   router.push('/')
 }
 
