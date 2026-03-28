@@ -31,6 +31,7 @@ export interface QueryResult {
  */
 export interface ConnectionStatus {
   id: string
+  connId?: string  // 实际的数据库连接 ID (conn_xxx 格式)
   connected: boolean
   error?: string
 }

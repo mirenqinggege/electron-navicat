@@ -33,8 +33,10 @@ async function connect() {
     const result = await ipcService.connect(toRaw(conn))
     if (result.success && result.connId) {
       workspaceStore.setConnId(result.connId)
+      // 保存实际的连接 ID 到状态中
       connectionStore.setConnectionStatus(connId.value, {
         id: connId.value,
+        connId: result.connId,
         connected: true
       })
       message.success('连接成功')
@@ -48,20 +50,23 @@ async function connect() {
 }
 
 async function disconnect() {
-  if (!connId.value) return
+  const status = connectionStore.getConnectionStatus(connId.value)
+  const actualConnId = status?.connId || workspaceStore.connId
 
-  try {
-    await ipcService.disconnect(workspaceStore.connId || connId.value)
-    connectionStore.setConnectionStatus(connId.value, {
-      id: connId.value,
-      connected: false
-    })
-    workspaceStore.reset()
-    message.success('已断开连接')
-  } catch (error) {
-    message.error('断开连接失败')
-    console.error(error)
+  if (actualConnId) {
+    try {
+      await ipcService.disconnect(actualConnId)
+    } catch (error) {
+      console.error('断开连接失败:', error)
+    }
   }
+
+  connectionStore.setConnectionStatus(connId.value, {
+    id: connId.value,
+    connected: false
+  })
+  workspaceStore.reset()
+  message.success('已断开连接')
 }
 
 async function executeSql() {
@@ -151,13 +156,15 @@ onMounted(() => {
   if (!workspaceStore.queryTabs.length) {
     workspaceStore.addQueryTab()
   }
-  
+
   if (connId.value) {
     const status = connectionStore.getConnectionStatus(connId.value)
-    if (!status?.connected) {
-      connect()
+    if (status?.connected && status.connId) {
+      // 已连接，使用保存的实际连接 ID
+      workspaceStore.setConnId(status.connId)
     } else {
-      workspaceStore.setConnId(connId.value)
+      // 未连接，建立新连接
+      connect()
     }
   }
 })
