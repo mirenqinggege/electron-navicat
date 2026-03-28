@@ -23,6 +23,7 @@ export interface QueryResult {
   fields: { name: string; type: string }[]
   affectedRows?: number
   insertId?: number
+  executionTime?: number
 }
 
 /**
@@ -115,6 +116,15 @@ export interface ConnectResult {
 }
 
 /**
+ * API 响应包装
+ */
+export interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  error?: string
+}
+
+/**
  * 暴露给渲染进程的数据库 API
  */
 export interface DbApi {
@@ -126,23 +136,23 @@ export interface DbApi {
   getConnectionConfig: (connId: string) => Promise<ConnectionConfig | undefined>
 
   // 数据库操作
-  getDatabases: (connId: string) => Promise<string[]>
-  getTables: (connId: string, database: string) => Promise<TableInfo[]>
-  getColumns: (connId: string, database: string, table: string) => Promise<ColumnInfo[]>
-  getIndexes: (connId: string, database: string, table: string) => Promise<IndexInfo[]>
+  getDatabases: (connId: string) => Promise<ApiResponse<string[]>>
+  getTables: (connId: string, database: string) => Promise<ApiResponse<TableInfo[]>>
+  getColumns: (connId: string, database: string, table: string) => Promise<ApiResponse<ColumnInfo[]>>
+  getIndexes: (connId: string, database: string, table: string) => Promise<ApiResponse<IndexInfo[]>>
 
   // 查询和数据操作
-  query: (connId: string, sql: string, params?: any[]) => Promise<QueryResult>
-  insert: (connId: string, database: string, table: string, data: Record<string, any>[]) => Promise<{ affectedRows: number; insertId: number }>
-  update: (connId: string, database: string, table: string, data: Record<string, any>, where: Record<string, any>) => Promise<{ affectedRows: number }>
-  delete: (connId: string, database: string, table: string, where: Record<string, any>) => Promise<{ affectedRows: number }>
+  query: (connId: string, sql: string, params?: any[]) => Promise<ApiResponse<QueryResult>>
+  insert: (connId: string, database: string, table: string, data: Record<string, any>[]) => Promise<ApiResponse<{ affectedRows: number; insertId: number }>>
+  update: (connId: string, database: string, table: string, data: Record<string, any>, where: Record<string, any>) => Promise<ApiResponse<{ affectedRows: number }>>
+  delete: (connId: string, database: string, table: string, where: Record<string, any>) => Promise<ApiResponse<{ affectedRows: number }>>
 
   // 监控
-  getStatus: (connId: string) => Promise<DBStatus>
-  getSlowQueries: (connId: string, limit?: number) => Promise<SlowQuery[]>
+  getStatus: (connId: string) => Promise<ApiResponse<DBStatus>>
+  getSlowQueries: (connId: string, limit?: number) => Promise<ApiResponse<SlowQuery[]>>
 
   // Schema
-  getSchema: (connId: string, database: string) => Promise<any>
+  getSchema: (connId: string, database: string) => Promise<ApiResponse<any>>
 }
 
 // 扩展 Window 接口
