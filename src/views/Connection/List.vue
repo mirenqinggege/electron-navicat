@@ -18,7 +18,7 @@ const columns = [
   { title: '主机', dataIndex: 'host', key: 'host' },
   { title: '端口', dataIndex: 'port', key: 'port' },
   { title: '数据库', dataIndex: 'database', key: 'database' },
-  { title: '操作', key: 'action', width: 200 }
+  { title: '操作', key: 'action', width: 280 }
 ]
 
 async function loadConnections() {
@@ -36,10 +36,14 @@ async function loadConnections() {
 }
 
 function handleAdd() {
-  router.push('/workspace/new')
+  router.push('/connection/new')
 }
 
 function handleEdit(record: ConnectionConfig) {
+  router.push(`/connection/${record.id}/edit`)
+}
+
+function handleConnect(record: ConnectionConfig) {
   router.push(`/workspace/${record.id}`)
 }
 
@@ -84,6 +88,7 @@ onMounted(() => {
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space>
+              <a-button size="small" type="primary" @click="handleConnect(record)">连接</a-button>
               <a-button size="small" @click="handleEdit(record)">编辑</a-button>
               <a-popconfirm
                 title="确定要删除这个连接吗？"

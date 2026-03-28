@@ -9,9 +9,21 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '连接管理' }
   },
   {
+    path: '/connection/new',
+    name: 'NewConnection',
+    component: () => import('../views/Connection/Form.vue'),
+    meta: { title: '新建连接' }
+  },
+  {
+    path: '/connection/:connId/edit',
+    name: 'EditConnection',
+    component: () => import('../views/Connection/Form.vue'),
+    meta: { title: '编辑连接' }
+  },
+  {
     path: '/workspace/:connId',
     name: 'Workspace',
-    component: () => import('../views/Connection/Form.vue'),
+    component: () => import('../views/Workspace/index.vue'),
     meta: { title: '工作区' }
   }
 ]
