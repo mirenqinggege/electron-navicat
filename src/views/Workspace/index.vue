@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, toRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { ipcService } from '../../services/ipc'
@@ -29,7 +29,8 @@ async function connect() {
       message.error('连接配置不存在')
       return
     }
-    const result = await ipcService.connect(conn)
+    // 使用 toRaw 避免 Vue 响应式对象序列化问题
+    const result = await ipcService.connect(toRaw(conn))
     if (result.success && result.connId) {
       workspaceStore.setConnId(result.connId)
       connectionStore.setConnectionStatus(connId.value, {
